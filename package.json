@@ -1,0 +1,13 @@
+{
+  "name": "techmart",
+  "version": "1.0.0",
+  "description": "TechMart E-Commerce — Full Stack",
+  "scripts": {
+    "start":      "cd backend && node server.js",
+    "build":      "cd backend && npm install",
+    "seed":       "cd backend && node config/seed.js",
+    "dev:back":   "cd backend && npm run dev",
+    "dev:front":  "node frontend-server.js"
+  },
+  "engines": { "node": ">=18.0.0" }
+}

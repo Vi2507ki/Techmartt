@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard — TechMart</title>
+  <link rel="stylesheet" href="css/admin.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<div class="admin-layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-name">Tech<span>Mart</span></div>
+      <div class="brand-sub">Admin Dashboard</div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-label">Main</div>
+      <div class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard">
+        <span class="nav-icon">📊</span> Dashboard
+      </div>
+      <div class="nav-item" onclick="showPage('orders')" id="nav-orders">
+        <span class="nav-icon">📦</span> Orders
+      </div>
+      <div class="nav-item" onclick="showPage('products')" id="nav-products">
+        <span class="nav-icon">🛍️</span> Products
+      </div>
+      <div class="nav-item" onclick="showPage('inventory')" id="nav-inventory">
+        <span class="nav-icon">📋</span> Inventory
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-label">Management</div>
+      <div class="nav-item" onclick="showPage('users')" id="nav-users">
+        <span class="nav-icon">👥</span> Users
+      </div>
+      <div class="nav-item" onclick="showPage('categories')" id="nav-categories">
+        <span class="nav-icon">🏷️</span> Categories
+      </div>
+      <div class="nav-item" onclick="showPage('reports')" id="nav-reports">
+        <span class="nav-icon">📈</span> Reports
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-label">Store</div>
+      <div class="nav-item" onclick="window.open('index.html','_blank')" id="nav-store">
+        <span class="nav-icon">🏪</span> Visit Store
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="admin-user">
+        <div class="admin-avatar">A</div>
+        <div class="admin-info">
+          <div class="name" id="admin-name">Admin</div>
+          <div class="role">Super Admin</div>
+        </div>
+      </div>
+      <button class="logout-btn" onclick="doLogout()">🚪 Logout</button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <div class="main-content">
+
+    <!-- Topbar -->
+    <div class="topbar">
+      <div class="topbar-title" id="page-title">Dashboard</div>
+      <div class="topbar-right">
+        <span id="low-stock-alert" style="display:none" class="topbar-badge">⚠️ Low Stock</span>
+        <button class="visit-store-btn" onclick="window.open('index.html','_blank')">🏪 View Store</button>
+      </div>
+    </div>
+
+    <!-- Pages -->
+    <div class="page-content">
+
+      <!-- ===== DASHBOARD PAGE ===== -->
+      <div id="page-dashboard">
+        <div class="stats-grid" id="stats-grid">
+          <div class="spinner"></div>
+        </div>
+        <div class="charts-grid">
+          <div class="chart-card">
+            <div class="chart-title">📈 Monthly Revenue (Last 6 Months)</div>
+            <canvas id="revenueChart" height="80"></canvas>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">🍩 Orders by Status</div>
+            <canvas id="statusChart" height="180"></canvas>
+            <div class="donut-legend" id="status-legend"></div>
+          </div>
+        </div>
+        <div class="charts-grid" style="grid-template-columns:1fr 1fr;">
+          <div class="chart-card">
+            <div class="chart-title">🏆 Top Selling Products</div>
+            <div id="top-products-list"></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">🗂️ Sales by Category</div>
+            <canvas id="categoryChart" height="180"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== ORDERS PAGE ===== -->
+      <div id="page-orders" style="display:none">
+        <div class="table-card">
+          <div class="table-header">
+            <div class="table-title">All Orders</div>
+            <div class="table-actions">
+              <select class="search-input" id="order-status-filter" onchange="loadOrders()" style="width:160px;">
+                <option value="">All Statuses</option>
+                <option value="placed">Placed</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="processing">Processing</option>
+                <option value="shipped">Shipped</option>
+                <option value="out_for_delivery">Out for Delivery</option>
+                <option value="delivered">Delivered</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+              <input class="search-input" id="order-search" placeholder="Search order ID..." oninput="loadOrders()" style="width:180px;" />
+            </div>
+          </div>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Order ID</th><th>Customer</th><th>Items</th>
+                  <th>Amount</th><th>Payment</th><th>Status</th>
+                  <th>Date</th><th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="orders-table-body">
+                <tr><td colspan="8" style="text-align:center;padding:40px;"><div class="spinner"></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== PRODUCTS PAGE ===== -->
+      <div id="page-products" style="display:none">
+        <div class="table-card">
+          <div class="table-header">
+            <div class="table-title">All Products</div>
+            <div class="table-actions">
+              <input class="search-input" id="product-search" placeholder="Search products..." oninput="loadProducts()" />
+              <button class="btn btn-primary" onclick="openProductModal()">+ Add Product</button>
+            </div>
+          </div>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Product</th><th>Category</th><th>Brand</th>
+                  <th>Price</th><th>Stock</th><th>Sold</th>
+                  <th>Rating</th><th>Status</th><th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="products-table-body">
+                <tr><td colspan="9" style="text-align:center;padding:40px;"><div class="spinner"></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== INVENTORY PAGE ===== -->
+      <div id="page-inventory" style="display:none">
+        <div class="table-card">
+          <div class="table-header">
+            <div class="table-title">Inventory Management</div>
+            <div class="table-actions">
+              <select class="search-input" id="stock-filter" onchange="loadInventory()" style="width:160px;">
+                <option value="">All Stock</option>
+                <option value="low">Low Stock (≤10)</option>
+                <option value="out">Out of Stock</option>
+                <option value="ok">In Stock</option>
+              </select>
+            </div>
+          </div>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Product</th><th>SKU</th><th>Category</th>
+                  <th>Current Stock</th><th>Sold</th><th>Status</th><th>Update Stock</th>
+                </tr>
+              </thead>
+              <tbody id="inventory-table-body">
+                <tr><td colspan="7" style="text-align:center;padding:40px;"><div class="spinner"></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== USERS PAGE ===== -->
+      <div id="page-users" style="display:none">
+        <div class="table-card">
+          <div class="table-header">
+            <div class="table-title">Registered Users</div>
+            <div class="table-actions">
+              <input class="search-input" id="user-search" placeholder="Search users..." oninput="loadUsers()" />
+            </div>
+          </div>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th><th>Email</th><th>Phone</th>
+                  <th>Joined</th><th>Status</th><th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="users-table-body">
+                <tr><td colspan="6" style="text-align:center;padding:40px;"><div class="spinner"></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== CATEGORIES PAGE ===== -->
+      <div id="page-categories" style="display:none">
+        <div class="table-card">
+          <div class="table-header">
+            <div class="table-title">Product Categories</div>
+            <div class="table-actions">
+              <button class="btn btn-primary" onclick="openCategoryModal()">+ Add Category</button>
+            </div>
+          </div>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead>
+                <tr><th>Icon</th><th>Name</th><th>Slug</th><th>Description</th><th>Status</th><th>Actions</th></tr>
+              </thead>
+              <tbody id="categories-table-body">
+                <tr><td colspan="6" style="text-align:center;padding:40px;"><div class="spinner"></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== REPORTS PAGE ===== -->
+      <div id="page-reports" style="display:none">
+        <div class="stats-grid" id="report-stats" style="margin-bottom:24px;"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="chart-card">
+            <div class="chart-title">📊 Revenue Trend</div>
+            <canvas id="reportRevenueChart" height="100"></canvas>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">📦 Orders Trend</div>
+            <canvas id="reportOrdersChart" height="100"></canvas>
+          </div>
+        </div>
+        <div class="chart-card" style="margin-top:16px;">
+          <div class="chart-title">🛍️ Category Performance</div>
+          <canvas id="reportCategoryChart" height="60"></canvas>
+        </div>
+      </div>
+
+    </div><!-- end page-content -->
+  </div><!-- end main-content -->
+</div><!-- end admin-layout -->
+
+<!-- ===== Product Modal ===== -->
+<div class="modal-overlay" id="product-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title" id="product-modal-title">Add Product</h3>
+      <button class="modal-close" onclick="closeProductModal()">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group" style="grid-column:1/-1;">
+        <label class="form-label">Product Name *</label>
+        <input class="form-input" id="p-name" placeholder="Enter product name" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Brand *</label>
+        <input class="form-input" id="p-brand" placeholder="e.g. Apple, Samsung" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Category *</label>
+        <select class="form-select" id="p-category">
+          <option value="">Select category</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Price (₹) *</label>
+        <input class="form-input" id="p-price" type="number" placeholder="0" min="0" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Original Price (₹)</label>
+        <input class="form-input" id="p-original-price" type="number" placeholder="0" min="0" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Stock *</label>
+        <input class="form-input" id="p-stock" type="number" placeholder="0" min="0" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Discount (%)</label>
+        <input class="form-input" id="p-discount" type="number" placeholder="0" min="0" max="100" />
+      </div>
+      <div class="form-group" style="grid-column:1/-1;">
+        <label class="form-label">Description *</label>
+        <textarea class="form-textarea" id="p-description" placeholder="Enter product description"></textarea>
+      </div>
+      <div class="form-group" style="grid-column:1/-1;">
+        <label class="form-label">Image URLs (comma-separated)</label>
+        <input class="form-input" id="p-images" placeholder="https://..., https://..." />
+      </div>
+      <div class="form-group" style="grid-column:1/-1;">
+        <label class="form-label">Tags (comma-separated)</label>
+        <input class="form-input" id="p-tags" placeholder="apple, iphone, 5g" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Featured</label>
+        <select class="form-select" id="p-featured">
+          <option value="false">No</option>
+          <option value="true">Yes</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <select class="form-select" id="p-active">
+          <option value="true">Active</option>
+          <option value="false">Inactive</option>
+        </select>
+      </div>
+    </div>
+    <input type="hidden" id="p-edit-id" />
+    <div style="display:flex;gap:10px;margin-top:16px;">
+      <button class="btn btn-primary" style="flex:1;" onclick="saveProduct()">Save Product</button>
+      <button class="btn btn-secondary" onclick="closeProductModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Order Status Modal ===== -->
+<div class="modal-overlay" id="order-modal">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <h3 class="modal-title">Update Order Status</h3>
+      <button class="modal-close" onclick="closeOrderModal()">✕</button>
+    </div>
+    <div id="order-modal-info" style="margin-bottom:16px;padding:12px;background:#f5f5f5;border-radius:8px;font-size:13px;"></div>
+    <div class="form-group">
+      <label class="form-label">New Status</label>
+      <select class="form-select" id="new-order-status">
+        <option value="placed">Placed</option>
+        <option value="confirmed">Confirmed</option>
+        <option value="processing">Processing</option>
+        <option value="shipped">Shipped</option>
+        <option value="out_for_delivery">Out for Delivery</option>
+        <option value="delivered">Delivered</option>
+        <option value="cancelled">Cancelled</option>
+        <option value="returned">Returned</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Note (optional)</label>
+      <input class="form-input" id="order-status-note" placeholder="Add a note for this status update" />
+    </div>
+    <input type="hidden" id="update-order-id" />
+    <div style="display:flex;gap:10px;margin-top:16px;">
+      <button class="btn btn-primary" style="flex:1;" onclick="updateOrderStatus()">Update Status</button>
+      <button class="btn btn-secondary" onclick="closeOrderModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Inventory Update Modal ===== -->
+<div class="modal-overlay" id="inventory-modal">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-header">
+      <h3 class="modal-title">Update Stock</h3>
+      <button class="modal-close" onclick="closeInventoryModal()">✕</button>
+    </div>
+    <div id="inv-product-info" style="margin-bottom:16px;font-size:14px;font-weight:600;"></div>
+    <div class="form-group">
+      <label class="form-label">New Stock Quantity</label>
+      <input class="form-input" id="new-stock-qty" type="number" min="0" placeholder="Enter new stock quantity" />
+    </div>
+    <input type="hidden" id="update-inv-id" />
+    <div style="display:flex;gap:10px;margin-top:16px;">
+      <button class="btn btn-primary" style="flex:1;" onclick="updateStock()">Update Stock</button>
+      <button class="btn btn-secondary" onclick="closeInventoryModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Category Modal ===== -->
+<div class="modal-overlay" id="category-modal">
+  <div class="modal" style="max-width:440px;">
+    <div class="modal-header">
+      <h3 class="modal-title" id="cat-modal-title">Add Category</h3>
+      <button class="modal-close" onclick="closeCategoryModal()">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Category Name *</label>
+      <input class="form-input" id="cat-name" placeholder="e.g. Smartphones" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Icon (Emoji)</label>
+      <input class="form-input" id="cat-icon" placeholder="📱" maxlength="4" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Description</label>
+      <textarea class="form-textarea" id="cat-desc" placeholder="Category description"></textarea>
+    </div>
+    <input type="hidden" id="cat-edit-id" />
+    <div style="display:flex;gap:10px;margin-top:16px;">
+      <button class="btn btn-primary" style="flex:1;" onclick="saveCategory()">Save Category</button>
+      <button class="btn btn-secondary" onclick="closeCategoryModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/main.js"></script>
+<script>
+// API handled by main.js (API_BASE auto-detects localhost vs production)
+
+// ===== Auth Guard =====
+function checkAdmin() {
+  if (!auth.isLoggedIn() || !auth.isAdmin()) {
+    showToast('Admin access required', 'error');
+    setTimeout(() => window.location.href = 'index.html', 1000);
+    return false;
+  }
+  const user = api.getUser();
+  document.getElementById('admin-name').textContent = user?.name || 'Admin';
+  return true;
+}
+
+// ===== Page Navigation =====
+const pages = ['dashboard','orders','products','inventory','users','categories','reports'];
+const pageTitles = {
+  dashboard:'Dashboard', orders:'Orders Management', products:'Products',
+  inventory:'Inventory', users:'Users', categories:'Categories', reports:'Reports & Analytics'
+};
+
+function showPage(page) {
+  pages.forEach(p => {
+    document.getElementById(`page-${p}`).style.display = p === page ? 'block' : 'none';
+    document.getElementById(`nav-${p}`)?.classList.toggle('active', p === page);
+  });
+  document.getElementById('page-title').textContent = pageTitles[page];
+
+  if (page === 'dashboard') loadDashboard();
+  else if (page === 'orders') loadOrders();
+  else if (page === 'products') loadProducts();
+  else if (page === 'inventory') loadInventory();
+  else if (page === 'users') loadUsers();
+  else if (page === 'categories') loadCategories();
+  else if (page === 'reports') loadReports();
+}
+
+// ===== Dashboard =====
+let revenueChart, statusChart, categoryChart;
+
+async function loadDashboard() {
+  try {
+    const data = await api.get('/dashboard/stats', true);
+    const { stats, orderStatusCount, monthlyRevenue, topProducts, categorySales } = data;
+
+    // Stats Grid
+    document.getElementById('stats-grid').innerHTML = `
+      <div class="stat-card revenue">
+        <span class="stat-icon">💰</span>
+        <span class="stat-label">Monthly Revenue</span>
+        <span class="stat-value">₹${(stats.totalRevenue/1000).toFixed(0)}K</span>
+        <span class="stat-change ${stats.revenueGrowth >= 0 ? 'up' : 'down'}">
+          ${stats.revenueGrowth >= 0 ? '↑' : '↓'} ${Math.abs(stats.revenueGrowth)}% vs last month
+        </span>
+      </div>
+      <div class="stat-card orders">
+        <span class="stat-icon">📦</span>
+        <span class="stat-label">Total Orders</span>
+        <span class="stat-value">${stats.totalOrders.toLocaleString()}</span>
+        <span class="stat-change up">↑ ${stats.monthOrders} this month</span>
+      </div>
+      <div class="stat-card users">
+        <span class="stat-icon">👥</span>
+        <span class="stat-label">Registered Users</span>
+        <span class="stat-value">${stats.totalUsers.toLocaleString()}</span>
+        <span class="stat-change up">Active customers</span>
+      </div>
+      <div class="stat-card products">
+        <span class="stat-icon">🛍️</span>
+        <span class="stat-label">Products</span>
+        <span class="stat-value">${stats.totalProducts}</span>
+        <span class="stat-change ${stats.lowStockProducts > 0 ? 'down' : 'up'}">
+          ${stats.lowStockProducts > 0 ? `⚠️ ${stats.lowStockProducts} low stock` : '✅ All stocked'}
+        </span>
+      </div>
+    `;
+
+    if (stats.lowStockProducts > 0) {
+      document.getElementById('low-stock-alert').style.display = 'inline-block';
+    }
+
+    // Revenue Chart
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const labels = monthlyRevenue.map(m => months[m._id.month - 1]);
+    const values = monthlyRevenue.map(m => m.revenue);
+
+    if (revenueChart) revenueChart.destroy();
+    revenueChart = new Chart(document.getElementById('revenueChart'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Revenue (₹)',
+          data: values,
+          backgroundColor: 'rgba(40,116,240,0.8)',
+          borderRadius: 6,
+          borderSkipped: false
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { ticks: { callback: v => '₹' + (v/1000).toFixed(0) + 'K' }, grid: { color: '#f0f0f0' } },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+
+    // Status Donut
+    const statusColors = {
+      placed:'#1565c0', confirmed:'#6a1b9a', processing:'#e65100',
+      shipped:'#2e7d32', out_for_delivery:'#00838f', delivered:'#26a541',
+      cancelled:'#e53935', returned:'#795548'
+    };
+    const statusLabels = orderStatusCount.map(s => s._id);
+    const statusVals = orderStatusCount.map(s => s.count);
+    const statusBgColors = statusLabels.map(s => statusColors[s] || '#888');
+
+    if (statusChart) statusChart.destroy();
+    statusChart = new Chart(document.getElementById('statusChart'), {
+      type: 'doughnut',
+      data: { labels: statusLabels, datasets: [{ data: statusVals, backgroundColor: statusBgColors, borderWidth: 2, borderColor: '#fff' }] },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        cutout: '65%'
+      }
+    });
+
+    document.getElementById('status-legend').innerHTML = orderStatusCount.map((s, i) => `
+      <div class="legend-item">
+        <div class="legend-dot" style="background:${statusBgColors[i]}"></div>
+        <span style="flex:1;text-transform:capitalize">${s._id.replace(/_/g,' ')}</span>
+        <strong>${s.count}</strong>
+      </div>
+    `).join('');
+
+    // Top Products
+    document.getElementById('top-products-list').innerHTML = topProducts.map((p, i) => `
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f5f5f5;">
+        <span style="width:22px;height:22px;background:var(--primary);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;">${i+1}</span>
+        <img src="${p.images?.[0]||''}" style="width:36px;height:36px;object-fit:contain;border-radius:4px;background:#f5f5f5;" onerror="this.src='https://via.placeholder.com/36'" />
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:600;">${p.name.substring(0,30)}...</div>
+          <div style="font-size:11px;color:var(--text-muted);">${p.sold} sold • ${formatPrice(p.price)}</div>
+        </div>
+      </div>
+    `).join('');
+
+    // Category Chart
+    if (categoryChart) categoryChart.destroy();
+    categoryChart = new Chart(document.getElementById('categoryChart'), {
+      type: 'pie',
+      data: {
+        labels: categorySales.map(c => c._id),
+        datasets: [{
+          data: categorySales.map(c => c.total),
+          backgroundColor: ['#2874f0','#fb641b','#26a541','#ff9f00','#6a1b9a','#00b9f1'],
+          borderWidth: 2,
+          borderColor: '#fff'
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'bottom', labels: { font: { size: 11 } } }
+        }
+      }
+    });
+
+  } catch(e) {
+    document.getElementById('stats-grid').innerHTML = `<div style="grid-column:1/-1;padding:24px;color:var(--danger);">⚠️ ${e.message} — Make sure backend is running</div>`;
+  }
+}
+
+// ===== Orders =====
+async function loadOrders() {
+  const status = document.getElementById('order-status-filter').value;
+  const search = document.getElementById('order-search').value;
+  let url = '/orders?limit=50';
+  if (status) url += `&status=${status}`;
+  if (search) url += `&search=${search}`;
+
+  const tbody = document.getElementById('orders-table-body');
+  tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;"><div class="spinner" style="margin:0 auto;"></div></td></tr>';
+
+  try {
+    const { orders } = await api.get(url, true);
+    if (!orders.length) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted);">No orders found</td></tr>';
+      return;
+    }
+    tbody.innerHTML = orders.map(o => `
+      <tr>
+        <td><strong>${o.orderId}</strong></td>
+        <td>
+          <div style="font-weight:600;font-size:13px;">${o.user?.name || 'N/A'}</div>
+          <div style="font-size:11px;color:var(--text-muted);">${o.user?.email || ''}</div>
+        </td>
+        <td>${o.items?.length || 0} item(s)</td>
+        <td><strong>${formatPrice(o.totalAmount)}</strong></td>
+        <td>
+          <span style="font-size:11px;text-transform:uppercase;font-weight:600;color:${o.paymentStatus==='paid'?'var(--success)':'var(--warning)'};">
+            ${o.paymentStatus}
+          </span>
+        </td>
+        <td><span class="badge badge-${o.orderStatus}">${o.orderStatus.replace(/_/g,' ')}</span></td>
+        <td style="font-size:12px;color:var(--text-muted);">${new Date(o.createdAt).toLocaleDateString('en-IN')}</td>
+        <td>
+          <button class="btn btn-primary btn-sm" onclick="openOrderModal('${o._id}','${o.orderId}','${o.orderStatus}')">Update</button>
+        </td>
+      </tr>
+    `).join('');
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--danger);">${e.message}</td></tr>`;
+  }
+}
+
+function openOrderModal(id, orderId, currentStatus) {
+  document.getElementById('update-order-id').value = id;
+  document.getElementById('new-order-status').value = currentStatus;
+  document.getElementById('order-modal-info').innerHTML = `<strong>Order:</strong> ${orderId} &nbsp;|&nbsp; <strong>Current:</strong> <span class="badge badge-${currentStatus}">${currentStatus.replace(/_/g,' ')}</span>`;
+  document.getElementById('order-status-note').value = '';
+  document.getElementById('order-modal').classList.add('open');
+}
+
+function closeOrderModal() { document.getElementById('order-modal').classList.remove('open'); }
+
+async function updateOrderStatus() {
+  const id = document.getElementById('update-order-id').value;
+  const status = document.getElementById('new-order-status').value;
+  const note = document.getElementById('order-status-note').value;
+  try {
+    await api.put(`/orders/${id}/status`, { status, note }, true);
+    showToast('Order status updated ✅', 'success');
+    closeOrderModal();
+    loadOrders();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+// ===== Products =====
+async function loadProducts() {
+  const search = document.getElementById('product-search').value;
+  let url = '/products/admin/all?limit=50';
+  if (search) url += `&search=${search}`;
+
+  const tbody = document.getElementById('products-table-body');
+  tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;"><div class="spinner" style="margin:0 auto;"></div></td></tr>';
+
+  try {
+    const { products } = await api.get(url, true);
+    if (!products.length) {
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-muted);">No products found</td></tr>';
+      return;
+    }
+    tbody.innerHTML = products.map(p => `
+      <tr>
+        <td>
+          <div class="product-cell">
+            <img class="product-thumb" src="${p.images?.[0]||''}" alt="${p.name}" onerror="this.src='https://via.placeholder.com/44'" />
+            <div>
+              <div style="font-weight:600;font-size:13px;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}</div>
+              <div style="font-size:11px;color:var(--text-muted);">SKU: ${p.sku || 'N/A'}</div>
+            </div>
+          </div>
+        </td>
+        <td>${p.category}</td>
+        <td>${p.brand}</td>
+        <td>
+          <strong>${formatPrice(p.price)}</strong>
+          ${p.discount > 0 ? `<div style="font-size:11px;color:var(--success);">${p.discount}% off</div>` : ''}
+        </td>
+        <td>
+          <span style="font-weight:600;color:${p.stock <= 5 ? 'var(--danger)' : p.stock <= 10 ? 'var(--warning)' : 'var(--success)'};">
+            ${p.stock}
+          </span>
+        </td>
+        <td>${p.sold || 0}</td>
+        <td>⭐ ${p.rating?.toFixed(1) || '0.0'} (${p.numReviews || 0})</td>
+        <td><span class="badge badge-${p.isActive ? 'active' : 'inactive'}">${p.isActive ? 'Active' : 'Inactive'}</span></td>
+        <td style="white-space:nowrap;">
+          <button class="btn btn-secondary btn-sm" onclick="editProduct(${JSON.stringify(p).replace(/"/g,'&quot;')})">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteProduct('${p._id}','${p.name.replace(/'/g,'')}')" style="margin-left:4px;">Delete</button>
+        </td>
+      </tr>
+    `).join('');
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--danger);">${e.message}</td></tr>`;
+  }
+}
+
+async function loadCategoryOptions() {
+  try {
+    const cats = await api.get('/categories');
+    const sel = document.getElementById('p-category');
+    sel.innerHTML = '<option value="">Select category</option>';
+    cats.forEach(c => sel.innerHTML += `<option value="${c.name}">${c.icon} ${c.name}</option>`);
+  } catch(e) {}
+}
+
+function openProductModal(product = null) {
+  document.getElementById('p-edit-id').value = '';
+  document.getElementById('p-name').value = '';
+  document.getElementById('p-brand').value = '';
+  document.getElementById('p-price').value = '';
+  document.getElementById('p-original-price').value = '';
+  document.getElementById('p-stock').value = '';
+  document.getElementById('p-discount').value = '0';
+  document.getElementById('p-description').value = '';
+  document.getElementById('p-images').value = '';
+  document.getElementById('p-tags').value = '';
+  document.getElementById('p-featured').value = 'false';
+  document.getElementById('p-active').value = 'true';
+  document.getElementById('product-modal-title').textContent = 'Add Product';
+  loadCategoryOptions();
+  document.getElementById('product-modal').classList.add('open');
+}
+
+function editProduct(p) {
+  document.getElementById('p-edit-id').value = p._id;
+  document.getElementById('p-name').value = p.name;
+  document.getElementById('p-brand').value = p.brand;
+  document.getElementById('p-price').value = p.price;
+  document.getElementById('p-original-price').value = p.originalPrice || '';
+  document.getElementById('p-stock').value = p.stock;
+  document.getElementById('p-discount').value = p.discount || 0;
+  document.getElementById('p-description').value = p.description;
+  document.getElementById('p-images').value = (p.images || []).join(', ');
+  document.getElementById('p-tags').value = (p.tags || []).join(', ');
+  document.getElementById('p-featured').value = String(p.isFeatured);
+  document.getElementById('p-active').value = String(p.isActive);
+  document.getElementById('product-modal-title').textContent = 'Edit Product';
+  loadCategoryOptions().then(() => {
+    document.getElementById('p-category').value = p.category;
+  });
+  document.getElementById('product-modal').classList.add('open');
+}
+
+function closeProductModal() { document.getElementById('product-modal').classList.remove('open'); }
+
+async function saveProduct() {
+  const editId = document.getElementById('p-edit-id').value;
+  const payload = {
+    name: document.getElementById('p-name').value.trim(),
+    brand: document.getElementById('p-brand').value.trim(),
+    category: document.getElementById('p-category').value,
+    price: Number(document.getElementById('p-price').value),
+    originalPrice: Number(document.getElementById('p-original-price').value) || 0,
+    stock: Number(document.getElementById('p-stock').value),
+    discount: Number(document.getElementById('p-discount').value) || 0,
+    description: document.getElementById('p-description').value.trim(),
+    images: document.getElementById('p-images').value.split(',').map(s => s.trim()).filter(Boolean),
+    tags: document.getElementById('p-tags').value.split(',').map(s => s.trim()).filter(Boolean),
+    isFeatured: document.getElementById('p-featured').value === 'true',
+    isActive: document.getElementById('p-active').value === 'true'
+  };
+
+  if (!payload.name || !payload.brand || !payload.category || !payload.price) {
+    showToast('Fill all required fields', 'error'); return;
+  }
+
+  try {
+    if (editId) {
+      await api.put(`/products/${editId}`, payload, true);
+      showToast('Product updated ✅', 'success');
+    } else {
+      await api.post('/products', payload, true);
+      showToast('Product created ✅', 'success');
+    }
+    closeProductModal();
+    loadProducts();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function deleteProduct(id, name) {
+  if (!confirm(`Delete "${name}"? This will mark it as inactive.`)) return;
+  try {
+    await api.delete(`/products/${id}`, true);
+    showToast('Product deleted', 'success');
+    loadProducts();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+// ===== Inventory =====
+async function loadInventory() {
+  const filter = document.getElementById('stock-filter').value;
+  const tbody = document.getElementById('inventory-table-body');
+  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;"><div class="spinner" style="margin:0 auto;"></div></td></tr>';
+
+  try {
+    let { products } = await api.get('/products/admin/all?limit=100', true);
+    if (filter === 'low') products = products.filter(p => p.stock > 0 && p.stock <= 10);
+    else if (filter === 'out') products = products.filter(p => p.stock === 0);
+    else if (filter === 'ok') products = products.filter(p => p.stock > 10);
+
+    if (!products.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">No products found</td></tr>';
+      return;
+    }
+    tbody.innerHTML = products.map(p => `
+      <tr>
+        <td>
+          <div class="product-cell">
+            <img class="product-thumb" src="${p.images?.[0]||''}" alt="${p.name}" onerror="this.src='https://via.placeholder.com/44'" />
+            <span style="font-weight:600;font-size:13px;">${p.name.substring(0,35)}...</span>
+          </div>
+        </td>
+        <td style="font-size:12px;color:var(--text-muted);">${p.sku || 'N/A'}</td>
+        <td>${p.category}</td>
+        <td>
+          <span style="font-size:18px;font-weight:700;color:${p.stock === 0 ? 'var(--danger)' : p.stock <= 10 ? 'var(--warning)' : 'var(--success)'};">${p.stock}</span>
+        </td>
+        <td>${p.sold || 0}</td>
+        <td>
+          <span class="badge badge-${p.stock === 0 ? 'inactive' : p.stock <= 10 ? 'low' : 'ok'}">
+            ${p.stock === 0 ? 'Out of Stock' : p.stock <= 10 ? 'Low Stock' : 'In Stock'}
+          </span>
+        </td>
+        <td>
+          <button class="btn btn-primary btn-sm" onclick="openInventoryModal('${p._id}','${p.name.replace(/'/g,'')}',${p.stock})">Update Stock</button>
+        </td>
+      </tr>
+    `).join('');
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--danger);">${e.message}</td></tr>`;
+  }
+}
+
+function openInventoryModal(id, name, current) {
+  document.getElementById('update-inv-id').value = id;
+  document.getElementById('inv-product-info').innerHTML = `📦 <strong>${name}</strong><br/><span style="font-size:12px;color:var(--text-muted);">Current Stock: <strong>${current}</strong></span>`;
+  document.getElementById('new-stock-qty').value = current;
+  document.getElementById('inventory-modal').classList.add('open');
+}
+
+function closeInventoryModal() { document.getElementById('inventory-modal').classList.remove('open'); }
+
+async function updateStock() {
+  const id = document.getElementById('update-inv-id').value;
+  const qty = Number(document.getElementById('new-stock-qty').value);
+  if (isNaN(qty) || qty < 0) { showToast('Enter valid stock quantity', 'error'); return; }
+  try {
+    await api.put(`/products/${id}`, { stock: qty }, true);
+    showToast('Stock updated ✅', 'success');
+    closeInventoryModal();
+    loadInventory();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+// ===== Users =====
+async function loadUsers() {
+  const search = document.getElementById('user-search').value;
+  let url = '/users?limit=50';
+  if (search) url += `&search=${search}`;
+  const tbody = document.getElementById('users-table-body');
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;"><div class="spinner" style="margin:0 auto;"></div></td></tr>';
+  try {
+    const { users } = await api.get(url, true);
+    if (!users.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);">No users found</td></tr>';
+      return;
+    }
+    tbody.innerHTML = users.map(u => `
+      <tr>
+        <td>
+          <div style="font-weight:600;">${u.name}</div>
+        </td>
+        <td>${u.email}</td>
+        <td>${u.phone || '—'}</td>
+        <td style="font-size:12px;color:var(--text-muted);">${new Date(u.createdAt).toLocaleDateString('en-IN')}</td>
+        <td><span class="badge badge-${u.isActive ? 'active' : 'inactive'}">${u.isActive ? 'Active' : 'Inactive'}</span></td>
+        <td>
+          <button class="btn btn-sm ${u.isActive ? 'btn-danger' : 'btn-success'}" onclick="toggleUser('${u._id}')">
+            ${u.isActive ? 'Deactivate' : 'Activate'}
+          </button>
+        </td>
+      </tr>
+    `).join('');
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--danger);">${e.message}</td></tr>`;
+  }
+}
+
+async function toggleUser(id) {
+  try {
+    const res = await api.put(`/users/${id}/toggle`, {}, true);
+    showToast(res.message, 'success');
+    loadUsers();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+// ===== Categories =====
+async function loadCategories() {
+  const tbody = document.getElementById('categories-table-body');
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;"><div class="spinner" style="margin:0 auto;"></div></td></tr>';
+  try {
+    const cats = await api.get('/categories');
+    if (!cats.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);">No categories found</td></tr>';
+      return;
+    }
+    tbody.innerHTML = cats.map(c => `
+      <tr>
+        <td style="font-size:24px;">${c.icon || '📦'}</td>
+        <td><strong>${c.name}</strong></td>
+        <td style="font-size:12px;color:var(--text-muted);">${c.slug}</td>
+        <td style="font-size:13px;color:var(--text-muted);">${c.description || '—'}</td>
+        <td><span class="badge badge-${c.isActive ? 'active' : 'inactive'}">${c.isActive ? 'Active' : 'Inactive'}</span></td>
+        <td style="white-space:nowrap;">
+          <button class="btn btn-secondary btn-sm" onclick="editCategory(${JSON.stringify(c).replace(/"/g,'&quot;')})">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteCategory('${c._id}','${c.name}')" style="margin-left:4px;">Delete</button>
+        </td>
+      </tr>
+    `).join('');
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--danger);">${e.message}</td></tr>`;
+  }
+}
+
+function openCategoryModal() {
+  document.getElementById('cat-edit-id').value = '';
+  document.getElementById('cat-name').value = '';
+  document.getElementById('cat-icon').value = '';
+  document.getElementById('cat-desc').value = '';
+  document.getElementById('cat-modal-title').textContent = 'Add Category';
+  document.getElementById('category-modal').classList.add('open');
+}
+
+function editCategory(c) {
+  document.getElementById('cat-edit-id').value = c._id;
+  document.getElementById('cat-name').value = c.name;
+  document.getElementById('cat-icon').value = c.icon || '';
+  document.getElementById('cat-desc').value = c.description || '';
+  document.getElementById('cat-modal-title').textContent = 'Edit Category';
+  document.getElementById('category-modal').classList.add('open');
+}
+
+function closeCategoryModal() { document.getElementById('category-modal').classList.remove('open'); }
+
+async function saveCategory() {
+  const editId = document.getElementById('cat-edit-id').value;
+  const payload = {
+    name: document.getElementById('cat-name').value.trim(),
+    icon: document.getElementById('cat-icon').value.trim() || '📦',
+    description: document.getElementById('cat-desc').value.trim()
+  };
+  if (!payload.name) { showToast('Category name required', 'error'); return; }
+  try {
+    if (editId) {
+      await api.put(`/categories/${editId}`, payload, true);
+      showToast('Category updated ✅', 'success');
+    } else {
+      await api.post('/categories', payload, true);
+      showToast('Category created ✅', 'success');
+    }
+    closeCategoryModal();
+    loadCategories();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function deleteCategory(id, name) {
+  if (!confirm(`Delete category "${name}"?`)) return;
+  try {
+    await api.delete(`/categories/${id}`, true);
+    showToast('Category deleted', 'success');
+    loadCategories();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+// ===== Reports =====
+let rRevChart, rOrdChart, rCatChart;
+async function loadReports() {
+  try {
+    const data = await api.get('/dashboard/stats', true);
+    const { stats, monthlyRevenue, categorySales } = data;
+
+    document.getElementById('report-stats').innerHTML = `
+      <div class="stat-card revenue"><span class="stat-icon">💰</span><span class="stat-label">Month Revenue</span><span class="stat-value">₹${(stats.totalRevenue/1000).toFixed(1)}K</span></div>
+      <div class="stat-card orders"><span class="stat-icon">📦</span><span class="stat-label">Month Orders</span><span class="stat-value">${stats.monthOrders}</span></div>
+      <div class="stat-card users"><span class="stat-icon">👥</span><span class="stat-label">Total Users</span><span class="stat-value">${stats.totalUsers}</span></div>
+      <div class="stat-card products"><span class="stat-icon">📉</span><span class="stat-label">Low Stock Items</span><span class="stat-value" style="color:${stats.lowStockProducts>0?'var(--danger)':'var(--success)'}">${stats.lowStockProducts}</span></div>
+    `;
+
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const labels = monthlyRevenue.map(m => months[m._id.month-1]);
+
+    if (rRevChart) rRevChart.destroy();
+    rRevChart = new Chart(document.getElementById('reportRevenueChart'), {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Revenue (₹)',
+          data: monthlyRevenue.map(m => m.revenue),
+          borderColor: '#2874f0',
+          backgroundColor: 'rgba(40,116,240,0.1)',
+          fill: true,
+          tension: 0.4,
+          pointBackgroundColor: '#2874f0',
+          pointRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { ticks: { callback: v => '₹' + (v/1000).toFixed(0) + 'K' }, grid: { color: '#f0f0f0' } },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+
+    if (rOrdChart) rOrdChart.destroy();
+    rOrdChart = new Chart(document.getElementById('reportOrdersChart'), {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Orders',
+          data: monthlyRevenue.map(m => m.orders),
+          borderColor: '#fb641b',
+          backgroundColor: 'rgba(251,100,27,0.1)',
+          fill: true,
+          tension: 0.4,
+          pointBackgroundColor: '#fb641b',
+          pointRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { grid: { color: '#f0f0f0' } },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+
+    if (rCatChart) rCatChart.destroy();
+    rCatChart = new Chart(document.getElementById('reportCategoryChart'), {
+      type: 'bar',
+      data: {
+        labels: categorySales.map(c => c._id),
+        datasets: [{
+          label: 'Revenue (₹)',
+          data: categorySales.map(c => c.total),
+          backgroundColor: ['#2874f0','#fb641b','#26a541','#ff9f00','#6a1b9a','#00b9f1'],
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { ticks: { callback: v => '₹' + (v/1000).toFixed(0) + 'K' }, grid: { color: '#f0f0f0' } },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+  } catch(e) {
+    document.getElementById('report-stats').innerHTML = `<div style="grid-column:1/-1;color:var(--danger);padding:20px;">⚠️ ${e.message}</div>`;
+  }
+}
+
+function doLogout() {
+  if (confirm('Logout from admin dashboard?')) auth.logout();
+}
+
+// ===== Init =====
+if (checkAdmin()) {
+  loadDashboard();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TechMart — India's Best Electronics Store</title>
+  <link rel="stylesheet" href="css/main.css" />
+  <style>
+    .deals-banner {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      padding: 16px 20px;
+    }
+    .deal-card {
+      border-radius: 8px;
+      padding: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      overflow: hidden;
+      position: relative;
+      min-height: 120px;
+    }
+    .deal-card:nth-child(1) { background: linear-gradient(135deg, #1565c0, #0277bd); }
+    .deal-card:nth-child(2) { background: linear-gradient(135deg, #2e7d32, #388e3c); }
+    .deal-card:nth-child(3) { background: linear-gradient(135deg, #6a1b9a, #8e24aa); }
+    .deal-info h3 { font-family: var(--font-display); font-size: 18px; font-weight: 700; color: white; }
+    .deal-info p { font-size: 13px; color: rgba(255,255,255,0.8); margin-top: 4px; }
+    .deal-badge { font-size: 36px; }
+
+    .offers-strip {
+      background: #fffde7;
+      padding: 10px 20px;
+      display: flex;
+      gap: 24px;
+      overflow-x: auto;
+      border-top: 1px solid #fff59d;
+      border-bottom: 1px solid #fff59d;
+    }
+    .offer-item { font-size: 12px; color: #666; white-space: nowrap; }
+    .offer-item strong { color: #e65100; }
+
+    .product-list-view .product-card {
+      display: flex;
+      flex-direction: row;
+      max-width: 100%;
+    }
+    .product-list-view .product-img-wrap { width: 200px; flex-shrink: 0; }
+
+    #sort-select {
+      padding: 8px 12px;
+      border: 1px solid var(--gray-300);
+      border-radius: 4px;
+      font-size: 13px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .pagination { display: flex; gap: 8px; justify-content: center; margin: 24px 0; }
+    .page-btn {
+      padding: 8px 14px;
+      border: 1px solid var(--gray-300);
+      background: white;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .page-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+  </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar">
+  <div class="navbar-brand">Tech<span>Mart</span></div>
+  <div class="search-bar">
+    <input type="text" id="search-input" placeholder="Search for phones, laptops, headphones..." />
+    <button onclick="doSearch()">🔍</button>
+  </div>
+  <div class="navbar-actions">
+    <button class="nav-btn" onclick="openAuth('login')" id="login-btn">👤 Login</button>
+    <button class="nav-btn" id="user-menu" style="display:none" onclick="toggleUserMenu()">👤 <span id="user-name">User</span> ▾</button>
+    <button class="nav-btn cart-btn" onclick="openCart()">🛒 Cart <span class="cart-count"></span></button>
+  </div>
+</nav>
+
+<!-- Offers Strip -->
+<div class="offers-strip">
+  <div class="offer-item">🏷️ <strong>BANK10</strong> — 10% off on HDFC cards</div>
+  <div class="offer-item">📦 <strong>Free Delivery</strong> on orders above ₹999</div>
+  <div class="offer-item">🔄 <strong>7-day</strong> hassle-free returns</div>
+  <div class="offer-item">🔒 <strong>100% Secure</strong> payments</div>
+  <div class="offer-item">⚡ <strong>Same Day</strong> delivery in select cities</div>
+</div>
+
+<!-- Category Strip -->
+<div class="category-strip" id="category-strip">
+  <div class="cat-item active" onclick="filterCategory('')" data-cat="">
+    <div class="cat-icon">🏠</div>
+    <div class="cat-name">All</div>
+  </div>
+</div>
+
+<!-- Hero Banner -->
+<div class="hero-banner">
+  <div class="hero-content">
+    <span class="hero-tag">🔥 GRAND SALE 2026</span>
+    <h1>Next-Gen Tech<br/>At Your Fingertips</h1>
+    <p>Unbeatable deals on smartphones, laptops, audio gear and more. Up to 40% off on premium brands.</p>
+    <button class="hero-cta" onclick="scrollToProducts()">Shop Now →</button>
+  </div>
+  <div class="hero-image">
+    <img src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600&q=80" alt="Tech Products" />
+  </div>
+</div>
+
+<!-- Deal Cards -->
+<div class="deals-banner">
+  <div class="deal-card" onclick="filterCategory('Smartphones')">
+    <div class="deal-info"><h3>Smartphones</h3><p>Up to 30% off</p></div>
+    <div class="deal-badge">📱</div>
+  </div>
+  <div class="deal-card" onclick="filterCategory('Laptops')">
+    <div class="deal-info"><h3>Laptops</h3><p>Big savings on MacBook & Dell</p></div>
+    <div class="deal-badge">💻</div>
+  </div>
+  <div class="deal-card" onclick="filterCategory('Gaming')">
+    <div class="deal-info"><h3>Gaming</h3><p>PS5 & consoles</p></div>
+    <div class="deal-badge">🎮</div>
+  </div>
+</div>
+
+<!-- Featured Products -->
+<div class="section" id="featured-section">
+  <div class="section-header">
+    <div class="section-title">⭐ Featured Deals</div>
+    <div class="see-all" onclick="filterCategory('')">See All →</div>
+  </div>
+  <div class="product-grid" id="featured-grid">
+    <div class="spinner"></div>
+  </div>
+</div>
+
+<!-- All Products with Filters -->
+<div id="products-section" style="padding: 0 20px;">
+  <div class="section-header" style="padding: 0; margin-bottom: 0; border: none;">
+    <div class="section-title" id="section-title">🛍️ All Products</div>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span style="font-size: 13px; color: var(--gray-500);" id="result-count"></span>
+      <select id="sort-select" onchange="loadProducts()">
+        <option value="newest">Newest First</option>
+        <option value="popular">Most Popular</option>
+        <option value="price_asc">Price: Low to High</option>
+        <option value="price_desc">Price: High to Low</option>
+        <option value="rating">Top Rated</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<div class="shop-layout">
+  <!-- Filter Sidebar -->
+  <div class="filter-sidebar">
+    <div class="filter-title">🔍 Filters</div>
+
+    <div class="filter-section">
+      <span class="filter-label">BRAND</span>
+      <div id="brand-filters"></div>
+    </div>
+
+    <div class="filter-section">
+      <span class="filter-label">PRICE RANGE</span>
+      <div class="price-range">
+        <input type="number" id="min-price" placeholder="Min ₹" />
+        <input type="number" id="max-price" placeholder="Max ₹" />
+      </div>
+      <button class="apply-filter-btn" onclick="loadProducts()">Apply</button>
+    </div>
+
+    <div class="filter-section">
+      <span class="filter-label">RATING</span>
+      <div>
+        <label class="filter-option"><input type="radio" name="rating" value="4" onchange="loadProducts()"> 4★ & above</label>
+        <label class="filter-option"><input type="radio" name="rating" value="3" onchange="loadProducts()"> 3★ & above</label>
+        <label class="filter-option"><input type="radio" name="rating" value="" checked onchange="loadProducts()"> All</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Product Grid -->
+  <div style="flex: 1;">
+    <div class="product-grid" id="products-grid">
+      <div class="spinner"></div>
+    </div>
+    <div class="pagination" id="pagination"></div>
+  </div>
+</div>
+
+<!-- Cart Sidebar -->
+<div class="cart-overlay" id="cart-overlay" onclick="closeCart()"></div>
+<div class="cart-sidebar" id="cart-sidebar">
+  <div class="cart-header">
+    <h3>🛒 My Cart</h3>
+    <button class="cart-close" onclick="closeCart()">✕</button>
+  </div>
+  <div class="cart-items" id="cart-items"></div>
+  <div class="cart-footer">
+    <div class="cart-total">
+      <span>Total</span>
+      <span id="cart-total">₹0</span>
+    </div>
+    <button class="checkout-btn" onclick="goToCheckout()">Proceed to Checkout →</button>
+  </div>
+</div>
+
+<!-- Auth Modal -->
+<div class="modal-overlay" id="auth-modal">
+  <div class="modal">
+    <h2 class="modal-title">Welcome to TechMart</h2>
+    <p class="modal-subtitle">Sign in to your account or create a new one</p>
+    <div class="tabs">
+      <button class="tab-btn active" id="login-tab" onclick="switchTab('login')">Login</button>
+      <button class="tab-btn" id="register-tab" onclick="switchTab('register')">Register</button>
+    </div>
+
+    <!-- Login Form -->
+    <div id="login-form">
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input type="email" class="form-input" id="login-email" placeholder="Enter your email" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" class="form-input" id="login-password" placeholder="Enter your password" />
+      </div>
+      <button class="btn-primary" onclick="doLogin()">Login</button>
+      <p style="font-size:12px;color:var(--gray-500);text-align:center;margin-top:12px;">
+        Admin: admin@techmart.com / Admin@2026
+      </p>
+    </div>
+
+    <!-- Register Form -->
+    <div id="register-form" style="display:none">
+      <div class="form-group">
+        <label class="form-label">Full Name</label>
+        <input type="text" class="form-input" id="reg-name" placeholder="Enter your full name" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input type="email" class="form-input" id="reg-email" placeholder="Enter your email" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone Number</label>
+        <input type="tel" class="form-input" id="reg-phone" placeholder="Enter your phone number" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" class="form-input" id="reg-password" placeholder="Create a password" />
+      </div>
+      <button class="btn-primary" onclick="doRegister()">Create Account</button>
+    </div>
+    <div style="text-align:right;margin-top:16px;">
+      <button onclick="closeAuth()" style="background:none;border:none;cursor:pointer;color:var(--gray-500);font-size:13px;">✕ Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Product Detail Modal -->
+<div class="modal-overlay" id="product-modal">
+  <div class="modal" style="max-width:700px;width:95%;">
+    <div id="product-detail-content"></div>
+    <button onclick="closeProductModal()" style="position:absolute;top:16px;right:16px;background:none;border:none;font-size:24px;cursor:pointer;">✕</button>
+  </div>
+</div>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="footer-grid">
+    <div>
+      <div class="footer-brand">Tech<span>Mart</span></div>
+      <p class="footer-desc">India's most trusted electronics retailer. Quality products, unbeatable prices, fast delivery.</p>
+    </div>
+    <div class="footer-col">
+      <h4>About</h4>
+      <ul>
+        <li>About Us</li><li>Careers</li><li>Press</li><li>Blog</li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Help</h4>
+      <ul>
+        <li>Payments</li><li>Shipping</li><li>Cancellation</li><li>Returns</li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Policy</h4>
+      <ul>
+        <li>Privacy</li><li>T&C</li><li>Security</li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>© 2026 TechMart Technologies Pvt. Ltd. All rights reserved.</p>
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+<script>
+  let currentPage = 1;
+  let currentCategory = '';
+  let currentSearch = '';
+
+  // ===== Init =====
+  async function init() {
+    checkAuthState();
+    await loadCategories();
+    await loadFeatured();
+    await loadProducts();
+  }
+
+  function checkAuthState() {
+    const user = api.getUser();
+    if (user) {
+      document.getElementById('login-btn').style.display = 'none';
+      document.getElementById('user-menu').style.display = 'flex';
+      document.getElementById('user-name').textContent = user.name.split(' ')[0];
+    }
+  }
+
+  function toggleUserMenu() {
+    const user = api.getUser();
+    if (!user) return;
+    if (user.role === 'admin') {
+      window.location.href = 'admin.html';
+    } else {
+      window.location.href = 'orders.html';
+    }
+  }
+
+  // ===== Load Categories =====
+  async function loadCategories() {
+    try {
+      const cats = await api.get('/categories');
+      const strip = document.getElementById('category-strip');
+      const brandFilters = document.getElementById('brand-filters');
+
+      cats.forEach(cat => {
+        const el = document.createElement('div');
+        el.className = 'cat-item';
+        el.setAttribute('data-cat', cat.name);
+        el.innerHTML = `<div class="cat-icon">${cat.icon}</div><div class="cat-name">${cat.name}</div>`;
+        el.onclick = () => filterCategory(cat.name);
+        strip.appendChild(el);
+      });
+    } catch(e) { console.error(e); }
+  }
+
+  // ===== Load Featured =====
+  async function loadFeatured() {
+    try {
+      const { products } = await api.get('/products?featured=true&limit=6');
+      const grid = document.getElementById('featured-grid');
+      grid.innerHTML = '';
+      products.forEach(p => grid.appendChild(createProductCard(p)));
+    } catch(e) {
+      document.getElementById('featured-grid').innerHTML = '<p style="color:var(--gray-500);padding:20px;">Could not load products. Make sure the backend is running.</p>';
+    }
+  }
+
+  // ===== Load Products =====
+  async function loadProducts() {
+    const sort = document.getElementById('sort-select').value;
+    const minPrice = document.getElementById('min-price').value;
+    const maxPrice = document.getElementById('max-price').value;
+
+    let url = `/products?page=${currentPage}&limit=12&sort=${sort}`;
+    if (currentCategory) url += `&category=${currentCategory}`;
+    if (currentSearch) url += `&search=${encodeURIComponent(currentSearch)}`;
+    if (minPrice) url += `&minPrice=${minPrice}`;
+    if (maxPrice) url += `&maxPrice=${maxPrice}`;
+
+    const grid = document.getElementById('products-grid');
+    grid.innerHTML = '<div class="spinner"></div>';
+
+    try {
+      const { products, total, pages } = await api.get(url);
+      grid.innerHTML = '';
+      document.getElementById('result-count').textContent = `${total} products`;
+
+      if (!products.length) {
+        grid.innerHTML = '<div class="empty-state"><div class="empty-icon">🔍</div><h3>No products found</h3><p>Try adjusting your filters</p></div>';
+        return;
+      }
+
+      products.forEach(p => grid.appendChild(createProductCard(p)));
+      renderPagination(pages);
+    } catch(e) {
+      grid.innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><h3>Backend not running</h3><p>Start the Node.js server first</p></div>';
+    }
+  }
+
+  // ===== Create Product Card =====
+  function createProductCard(p) {
+    const discountedPrice = p.discount > 0 ? p.price - (p.price * p.discount / 100) : p.price;
+    const card = document.createElement('div');
+    card.className = 'product-card';
+    card.innerHTML = `
+      ${p.discount ? `<div class="product-badge">${p.discount}% OFF</div>` : ''}
+      <div class="product-img-wrap" onclick="openProduct('${p._id}')">
+        <img src="${p.images?.[0] || 'https://via.placeholder.com/200'}" alt="${p.name}" loading="lazy" onerror="this.src='https://via.placeholder.com/200?text=No+Image'" />
+      </div>
+      <div class="product-info">
+        <div class="product-brand">${p.brand}</div>
+        <div class="product-name" onclick="openProduct('${p._id}')">${p.name}</div>
+        <div class="product-rating">
+          <span class="rating-badge">⭐ ${p.rating?.toFixed(1)}</span>
+          <span class="rating-count">(${p.numReviews?.toLocaleString()})</span>
+        </div>
+        <div class="product-price">
+          <span class="price-current">${formatPrice(discountedPrice)}</span>
+          ${p.originalPrice ? `<span class="price-original">${formatPrice(p.originalPrice)}</span>` : ''}
+          ${p.discount ? `<span class="price-discount">${p.discount}% off</span>` : ''}
+        </div>
+        ${p.stock < 5 ? `<p style="color:var(--danger);font-size:11px;margin-top:4px;">Only ${p.stock} left!</p>` : ''}
+        <button class="add-to-cart-btn" onclick="addToCart(event, ${JSON.stringify(p).replace(/"/g, '&quot;')})">
+          🛒 Add to Cart
+        </button>
+      </div>
+    `;
+    return card;
+  }
+
+  // ===== Pagination =====
+  function renderPagination(pages) {
+    const pg = document.getElementById('pagination');
+    pg.innerHTML = '';
+    for (let i = 1; i <= pages; i++) {
+      const btn = document.createElement('button');
+      btn.className = 'page-btn' + (i === currentPage ? ' active' : '');
+      btn.textContent = i;
+      btn.onclick = () => { currentPage = i; loadProducts(); window.scrollTo(0,0); };
+      pg.appendChild(btn);
+    }
+  }
+
+  // ===== Filter =====
+  function filterCategory(cat) {
+    currentCategory = cat;
+    currentPage = 1;
+    document.querySelectorAll('.cat-item').forEach(el => {
+      el.classList.toggle('active', el.getAttribute('data-cat') === cat);
+    });
+    document.getElementById('section-title').textContent = cat ? `🛍️ ${cat}` : '🛍️ All Products';
+    loadProducts();
+    document.getElementById('products-section').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function doSearch() {
+    currentSearch = document.getElementById('search-input').value;
+    currentPage = 1;
+    loadProducts();
+  }
+
+  document.getElementById('search-input').addEventListener('keypress', e => {
+    if (e.key === 'Enter') doSearch();
+  });
+
+  function scrollToProducts() {
+    document.getElementById('products-section').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  // ===== Cart =====
+  function addToCart(e, product) {
+    e.stopPropagation();
+    if (product.stock === 0) { showToast('Out of stock!', 'error'); return; }
+    cart.add(product);
+    showToast(`${product.name.substring(0, 30)}... added to cart!`, 'success');
+  }
+
+  function openCart() { document.getElementById('cart-sidebar').classList.add('open'); document.getElementById('cart-overlay').classList.add('open'); renderCart(); }
+  function closeCart() { document.getElementById('cart-sidebar').classList.remove('open'); document.getElementById('cart-overlay').classList.remove('open'); }
+
+  function renderCart() {
+    const container = document.getElementById('cart-items');
+    document.getElementById('cart-total').textContent = formatPrice(cart.total());
+
+    if (!cart.items.length) {
+      container.innerHTML = '<div class="empty-state"><div class="empty-icon">🛒</div><h3>Cart is empty</h3><p>Add items to get started</p></div>';
+      return;
+    }
+
+    container.innerHTML = cart.items.map(item => `
+      <div class="cart-item">
+        <img src="${item.image || 'https://via.placeholder.com/70'}" alt="${item.name}" onerror="this.src='https://via.placeholder.com/70'" />
+        <div class="cart-item-info">
+          <div class="cart-item-name">${item.name.substring(0, 45)}...</div>
+          <div class="cart-item-price">${formatPrice(item.price)}</div>
+          <div class="cart-item-qty">
+            <button class="qty-btn" onclick="updateQty('${item._id}', ${item.qty - 1})">−</button>
+            <span class="qty-val">${item.qty}</span>
+            <button class="qty-btn" onclick="updateQty('${item._id}', ${item.qty + 1})">+</button>
+          </div>
+        </div>
+        <button class="cart-remove" onclick="removeItem('${item._id}')">🗑️</button>
+      </div>
+    `).join('');
+  }
+
+  function updateQty(id, qty) { cart.updateQty(id, qty); renderCart(); }
+  function removeItem(id) { cart.remove(id); renderCart(); }
+
+  function goToCheckout() {
+    if (!cart.items.length) { showToast('Cart is empty!', 'error'); return; }
+    if (!auth.isLoggedIn()) { closeCart(); openAuth('login'); showToast('Please login to checkout', 'info'); return; }
+    window.location.href = 'checkout.html';
+  }
+
+  // ===== Auth =====
+  function openAuth(tab = 'login') {
+    document.getElementById('auth-modal').classList.add('open');
+    switchTab(tab);
+  }
+
+  function closeAuth() { document.getElementById('auth-modal').classList.remove('open'); }
+
+  function switchTab(tab) {
+    document.getElementById('login-form').style.display = tab === 'login' ? 'block' : 'none';
+    document.getElementById('register-form').style.display = tab === 'register' ? 'block' : 'none';
+    document.getElementById('login-tab').classList.toggle('active', tab === 'login');
+    document.getElementById('register-tab').classList.toggle('active', tab === 'register');
+  }
+
+  async function doLogin() {
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+    if (!email || !password) { showToast('Enter email and password', 'error'); return; }
+
+    try {
+      const data = await api.post('/auth/login', { email, password });
+      localStorage.setItem('tm_token', data.token);
+      localStorage.setItem('tm_user', JSON.stringify(data.user));
+      closeAuth();
+      showToast(`Welcome back, ${data.user.name}! 👋`, 'success');
+
+      if (data.user.role === 'admin') {
+        setTimeout(() => window.location.href = 'admin.html', 1000);
+      } else {
+        checkAuthState();
+      }
+    } catch(e) { showToast(e.message, 'error'); }
+  }
+
+  async function doRegister() {
+    const name = document.getElementById('reg-name').value;
+    const email = document.getElementById('reg-email').value;
+    const phone = document.getElementById('reg-phone').value;
+    const password = document.getElementById('reg-password').value;
+    if (!name || !email || !password) { showToast('All fields are required', 'error'); return; }
+
+    try {
+      const data = await api.post('/auth/register', { name, email, password, phone });
+      localStorage.setItem('tm_token', data.token);
+      localStorage.setItem('tm_user', JSON.stringify(data.user));
+      closeAuth();
+      checkAuthState();
+      showToast(`Welcome to TechMart, ${data.user.name}! 🎉`, 'success');
+    } catch(e) { showToast(e.message, 'error'); }
+  }
+
+  // ===== Product Modal =====
+  async function openProduct(id) {
+    const modal = document.getElementById('product-modal');
+    const content = document.getElementById('product-detail-content');
+    modal.classList.add('open');
+    content.innerHTML = '<div class="spinner"></div>';
+
+    try {
+      const p = await api.get(`/products/${id}`);
+      const price = p.discount > 0 ? p.price - (p.price * p.discount / 100) : p.price;
+      content.innerHTML = `
+        <div style="display:flex;gap:24px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:200px;">
+            <img src="${p.images?.[0] || ''}" alt="${p.name}" style="width:100%;border-radius:8px;object-fit:contain;max-height:280px;background:#f5f5f5;" onerror="this.src='https://via.placeholder.com/300'" />
+          </div>
+          <div style="flex:2;min-width:240px;">
+            <div style="font-size:11px;color:var(--gray-500);font-weight:600;text-transform:uppercase;">${p.brand}</div>
+            <h2 style="font-family:var(--font-display);font-size:20px;margin:6px 0;">${p.name}</h2>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+              <span style="background:var(--success);color:white;padding:2px 8px;border-radius:3px;font-size:13px;font-weight:700;">⭐ ${p.rating?.toFixed(1)}</span>
+              <span style="font-size:12px;color:var(--gray-500)">${p.numReviews?.toLocaleString()} reviews</span>
+            </div>
+            <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:16px;">
+              <span style="font-size:28px;font-weight:700;">${formatPrice(price)}</span>
+              ${p.originalPrice ? `<span style="font-size:16px;color:var(--gray-500);text-decoration:line-through;">${formatPrice(p.originalPrice)}</span>` : ''}
+              ${p.discount ? `<span style="color:var(--success);font-weight:600;">${p.discount}% off</span>` : ''}
+            </div>
+            <p style="font-size:13px;color:var(--gray-700);line-height:1.6;margin-bottom:16px;">${p.description}</p>
+            <p style="font-size:13px;color:${p.stock > 10 ? 'var(--success)' : p.stock > 0 ? 'var(--warning)' : 'var(--danger)'};font-weight:600;margin-bottom:16px;">
+              ${p.stock > 10 ? '✅ In Stock' : p.stock > 0 ? `⚠️ Only ${p.stock} left` : '❌ Out of Stock'}
+            </p>
+            <button class="btn-primary" style="max-width:220px;" onclick="addToCart(event, ${JSON.stringify(p).replace(/"/g, '&quot;')});closeProductModal()">
+              🛒 Add to Cart
+            </button>
+          </div>
+        </div>
+      `;
+    } catch(e) { content.innerHTML = '<p style="color:red;">Failed to load product</p>'; }
+  }
+
+  function closeProductModal() { document.getElementById('product-modal').classList.remove('open'); }
+
+  // Keyboard ESC
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { closeAuth(); closeProductModal(); closeCart(); }
+  });
+
+  init();
+</script>
+</body>
+</html>

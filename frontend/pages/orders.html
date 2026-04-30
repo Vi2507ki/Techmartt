@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Orders — TechMart</title>
+  <link rel="stylesheet" href="css/main.css" />
+  <style>
+    .orders-page { max-width: 900px; margin: 0 auto; padding: 24px 20px; }
+    .page-title { font-family: var(--font-display); font-size: 26px; font-weight: 800; margin-bottom: 24px; }
+
+    .order-card {
+      background: white;
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+
+    .order-header {
+      background: #f5f5f5;
+      padding: 14px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .order-id { font-weight: 700; font-size: 14px; }
+    .order-date { font-size: 12px; color: var(--gray-500); }
+    .order-total { font-weight: 700; font-size: 16px; }
+
+    .order-status-badge {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: capitalize;
+    }
+    .status-placed { background: #e3f2fd; color: #1565c0; }
+    .status-confirmed { background: #f3e5f5; color: #6a1b9a; }
+    .status-processing { background: #fff3e0; color: #e65100; }
+    .status-shipped { background: #e8f5e9; color: #2e7d32; }
+    .status-out_for_delivery { background: #e0f7fa; color: #00838f; }
+    .status-delivered { background: #e8f5e9; color: var(--success); }
+    .status-cancelled { background: #ffebee; color: var(--danger); }
+
+    .order-body { padding: 16px 20px; }
+
+    .order-track {
+      display: flex;
+      justify-content: space-between;
+      margin: 16px 0;
+      position: relative;
+    }
+
+    .order-track::before {
+      content: '';
+      position: absolute;
+      top: 16px;
+      left: 10%;
+      right: 10%;
+      height: 2px;
+      background: var(--gray-200);
+    }
+
+    .track-step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      z-index: 1;
+      flex: 1;
+    }
+
+    .track-dot {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--gray-200);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+
+    .track-dot.done { background: var(--success); color: white; }
+    .track-dot.active { background: var(--primary); color: white; }
+    .track-label { font-size: 10px; color: var(--gray-500); text-align: center; font-weight: 600; }
+    .track-label.active { color: var(--primary); }
+
+    .order-items-list { border-top: 1px solid var(--gray-100); padding-top: 14px; margin-top: 14px; }
+    .mini-item { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
+    .mini-item img { width: 48px; height: 48px; object-fit: contain; border-radius: 4px; background: #f5f5f5; }
+    .mini-item-name { font-size: 13px; font-weight: 600; }
+    .mini-item-meta { font-size: 12px; color: var(--gray-500); }
+
+    .order-actions { display: flex; gap: 10px; margin-top: 14px; }
+    .btn-outline {
+      padding: 8px 16px;
+      border: 1.5px solid var(--gray-300);
+      background: white;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: var(--font-body);
+      transition: var(--transition);
+    }
+    .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+    .btn-danger-outline { border-color: var(--danger); color: var(--danger); }
+    .btn-danger-outline:hover { background: var(--danger); color: white; }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-brand" onclick="window.location.href='index.html'" style="cursor:pointer">Tech<span>Mart</span></div>
+  <div style="flex:1"></div>
+  <button class="nav-btn" onclick="window.location.href='index.html'">🏠 Home</button>
+  <button class="nav-btn" onclick="auth.logout()">🚪 Logout</button>
+</nav>
+
+<div class="orders-page">
+  <h1 class="page-title">📦 My Orders</h1>
+  <div id="orders-container">
+    <div class="spinner"></div>
+  </div>
+</div>
+
+<script src="js/main.js"></script>
+<script>
+  const ORDER_STEPS = [
+    { key: 'placed', label: 'Placed', icon: '📋' },
+    { key: 'confirmed', label: 'Confirmed', icon: '✅' },
+    { key: 'processing', label: 'Processing', icon: '⚙️' },
+    { key: 'shipped', label: 'Shipped', icon: '🚚' },
+    { key: 'out_for_delivery', label: 'Out for Delivery', icon: '🏃' },
+    { key: 'delivered', label: 'Delivered', icon: '🎉' }
+  ];
+
+  function getStepIndex(status) {
+    return ORDER_STEPS.findIndex(s => s.key === status);
+  }
+
+  async function loadOrders() {
+    if (!auth.isLoggedIn()) {
+      window.location.href = 'index.html'; return;
+    }
+
+    try {
+      const orders = await api.get('/orders/my', true);
+      const container = document.getElementById('orders-container');
+
+      if (!orders.length) {
+        container.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><h3>No orders yet</h3><p>Start shopping to see your orders here</p><br/><button class="btn-primary" style="max-width:200px" onclick="window.location.href='index.html'">Shop Now</button></div>`;
+        return;
+      }
+
+      container.innerHTML = orders.map(order => {
+        const currentStep = getStepIndex(order.orderStatus);
+        const isCancelled = order.orderStatus === 'cancelled';
+
+        const trackSteps = isCancelled ? '' : `
+          <div class="order-track">
+            ${ORDER_STEPS.map((step, i) => `
+              <div class="track-step">
+                <div class="track-dot ${i < currentStep ? 'done' : i === currentStep ? 'active' : ''}">
+                  ${i <= currentStep ? step.icon : '○'}
+                </div>
+                <span class="track-label ${i === currentStep ? 'active' : ''}">${step.label}</span>
+              </div>
+            `).join('')}
+          </div>
+        `;
+
+        const itemsList = order.items.map(item => `
+          <div class="mini-item">
+            <img src="${item.image || ''}" alt="${item.name}" onerror="this.src='https://via.placeholder.com/48'" />
+            <div>
+              <div class="mini-item-name">${item.name}</div>
+              <div class="mini-item-meta">Qty: ${item.quantity} × ${formatPrice(item.price)} = <strong>${formatPrice(item.subtotal)}</strong></div>
+            </div>
+          </div>
+        `).join('');
+
+        const canCancel = !['shipped', 'out_for_delivery', 'delivered', 'cancelled'].includes(order.orderStatus);
+
+        return `
+          <div class="order-card">
+            <div class="order-header">
+              <div>
+                <div class="order-id">Order #${order.orderId}</div>
+                <div class="order-date">Placed on ${new Date(order.createdAt).toLocaleDateString('en-IN', {day:'numeric',month:'long',year:'numeric'})}</div>
+              </div>
+              <span class="order-status-badge status-${order.orderStatus}">${order.orderStatus.replace(/_/g, ' ')}</span>
+              <div class="order-total">${formatPrice(order.totalAmount)}</div>
+            </div>
+            <div class="order-body">
+              ${trackSteps}
+              <div class="order-items-list">${itemsList}</div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:13px;color:var(--gray-500);">
+                <span>📍 Deliver to: ${order.shippingAddress.name}, ${order.shippingAddress.city}, ${order.shippingAddress.pincode}</span>
+                <span>💳 ${order.paymentMethod.toUpperCase()} • ${order.paymentStatus}</span>
+              </div>
+              ${order.estimatedDelivery && order.orderStatus !== 'delivered' && order.orderStatus !== 'cancelled' ?
+                `<div style="margin-top:8px;font-size:13px;color:var(--success);font-weight:600;">📅 Expected delivery: ${new Date(order.estimatedDelivery).toLocaleDateString('en-IN', {day:'numeric',month:'long'})}</div>` : ''}
+              <div class="order-actions">
+                ${canCancel ? `<button class="btn-outline btn-danger-outline" onclick="cancelOrder('${order._id}')">Cancel Order</button>` : ''}
+                <button class="btn-outline" onclick="window.location.href='index.html'">Buy Again</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+    } catch(e) {
+      document.getElementById('orders-container').innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><h3>Error loading orders</h3><p>${e.message}</p></div>`;
+    }
+  }
+
+  async function cancelOrder(id) {
+    if (!confirm('Are you sure you want to cancel this order?')) return;
+    try {
+      await api.put(`/orders/${id}/cancel`, {}, true);
+      showToast('Order cancelled successfully', 'success');
+      setTimeout(loadOrders, 500);
+    } catch(e) { showToast(e.message, 'error'); }
+  }
+
+  loadOrders();
+</script>
+</body>
+</html>
